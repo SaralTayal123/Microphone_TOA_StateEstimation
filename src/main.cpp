@@ -1,4 +1,41 @@
+
+#include "ADC_Sampler.h"
 #include <Arduino.h>
+
+ADC_Sampler adc_sampler(ADC1_CHANNEL_6);
+
+void setup()
+{
+  // Initialize the ADC
+  adc_sampler.init();
+
+  // Start the serial communication
+  Serial.begin(115200);
+}
+
+void loop()
+{
+  // TODO: Move Sampling Task to separate core
+  ulong start = micros();
+  adc_sampler.sample();
+  ulong end = micros();
+
+  if (adc_sampler.buffer_ready())
+  {
+    adc_sample_t *buffer = adc_sampler.get_full_buffer();
+    size_t count = 0;
+    // TODO: Implement peak detection
+    for (size_t i = 1; i < ADC_BUFFER_SIZE-1; i++)
+    {
+      if (buffer[i-1] < buffer[i] && buffer[i] > buffer[i+1])
+      {
+        count++;
+      }
+    }
+    Serial.println(count);
+  }
+}
+
 // #include <driver/i2s.h>
 
 // // you shouldn't need to change these settings
@@ -54,45 +91,3 @@
 //     Serial.printf("%ld\n", raw_samples[i]);
 //   }
 // }
-
-
-
-
-
-#include <driver/adc.h>
-
-void setup()
-{
-  // Initialize the ADC
-  adc1_config_width(ADC_WIDTH_BIT_12);
-  adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
-  adc1_config_channel_atten(ADC1_CHANNEL_0, ADC_ATTEN_DB_11);
-  adc1_config_channel_atten(ADC1_CHANNEL_1, ADC_ATTEN_DB_11);
-  adc1_config_channel_atten(ADC1_CHANNEL_2, ADC_ATTEN_DB_11);
-  adc1_config_channel_atten(ADC1_CHANNEL_3, ADC_ATTEN_DB_11);
-  adc1_config_channel_atten(ADC1_CHANNEL_4, ADC_ATTEN_DB_11);
-
-
-  // Start the serial communication
-  Serial.begin(115200);
-}
-
-void loop()
-{
-  // Read the ADC value from GPIO 25
-  ulong start = micros();
-  int adcValue = adc1_get_raw(ADC1_CHANNEL_6);
-  int adcValue0 = adc1_get_raw(ADC1_CHANNEL_0);
-  int adcValue1 = adc1_get_raw(ADC1_CHANNEL_1);
-  int adcValue2 = adc1_get_raw(ADC1_CHANNEL_2);
-  int adcValue3 = adc1_get_raw(ADC1_CHANNEL_3);
-  int adcValue4 = adc1_get_raw(ADC1_CHANNEL_4);
-  ulong end = micros();
-
-  // Print the ADC value to the serial monitor
-  // Serial.println(end - start);
-  Serial.println(adcValue);
-
-  // Delay for a short period of time
-  // delay(100);
-}
