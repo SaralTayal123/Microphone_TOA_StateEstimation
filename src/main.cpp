@@ -2,38 +2,131 @@
 #include "ADC_Sampler.h"
 #include <Arduino.h>
 
-ADC_Sampler adc_sampler(ADC1_CHANNEL_6);
+ADC_Sampler mic0(ADC2_CHANNEL_5);
+ADC_Sampler mic1(ADC2_CHANNEL_8);
+ADC_Sampler mic2(ADC2_CHANNEL_9);
+ADC_Sampler mic3(ADC2_CHANNEL_7);
+ADC_Sampler mic4(ADC2_CHANNEL_6);
+// ADC_Sampler mic5(ADC2_CHANNEL_4);
+
+void sampleTask(void *param)
+{
+  while (true)
+  {
+    mic0.sample();
+    mic1.sample();
+    mic2.sample();
+    mic3.sample();
+    mic4.sample();
+    // mic5.sample();
+  }
+}
 
 void setup()
 {
   // Initialize the ADC
-  adc_sampler.init();
+  mic0.init();
+  mic1.init();
+  mic2.init();
+  mic3.init();
+  mic4.init();
+  // mic5.init();
 
   // Start the serial communication
   Serial.begin(115200);
+
+  TaskHandle_t sampleTaskHandle;
+  xTaskCreatePinnedToCore(sampleTask, "Mic Sample Task", 2048, NULL, 1, &sampleTaskHandle, 1);
 }
 
 void loop()
 {
-  // TODO: Move Sampling Task to separate core
-  ulong start = micros();
-  adc_sampler.sample();
-  ulong end = micros();
-
-  if (adc_sampler.buffer_ready())
+  if (mic0.buffer_ready())
   {
-    adc_sample_t *buffer = adc_sampler.get_full_buffer();
+    adc_sample_t *buffer = mic0.get_full_buffer();
     size_t count = 0;
+    adc_sample_t max = 0;
     // TODO: Implement peak detection
     for (size_t i = 1; i < ADC_BUFFER_SIZE-1; i++)
     {
-      if (buffer[i-1] < buffer[i] && buffer[i] > buffer[i+1])
-      {
-        count++;
-      }
+      if (buffer[i] > max)
+        max = buffer[i];
     }
-    Serial.println(count);
+    Serial.printf("%d, ", max);
   }
+
+  if (mic1.buffer_ready())
+  {
+    adc_sample_t *buffer = mic1.get_full_buffer();
+    size_t count = 0;
+    adc_sample_t max = 0;
+    // TODO: Implement peak detection
+    for (size_t i = 1; i < ADC_BUFFER_SIZE-1; i++)
+    {
+      if (buffer[i] > max)
+        max = buffer[i];
+    }
+    Serial.printf("%d, ", max);
+  }
+
+
+    if (mic2.buffer_ready())
+  {
+    adc_sample_t *buffer = mic2.get_full_buffer();
+    size_t count = 0;
+    adc_sample_t max = 0;
+    // TODO: Implement peak detection
+    for (size_t i = 1; i < ADC_BUFFER_SIZE-1; i++)
+    {
+      if (buffer[i] > max)
+        max = buffer[i];
+    }
+    Serial.printf("%d, ", max);
+  }
+
+
+  if (mic3.buffer_ready())
+  {
+    adc_sample_t *buffer = mic3.get_full_buffer();
+    size_t count = 0;
+    adc_sample_t max = 0;
+    // TODO: Implement peak detection
+    for (size_t i = 1; i < ADC_BUFFER_SIZE-1; i++)
+    {
+      if (buffer[i] > max)
+        max = buffer[i];
+    }
+    Serial.printf("%d, ", max);
+  }
+
+
+  if (mic4.buffer_ready())
+  {
+    adc_sample_t *buffer = mic4.get_full_buffer();
+    size_t count = 0;
+    adc_sample_t max = 0;
+    // TODO: Implement peak detection
+    for (size_t i = 1; i < ADC_BUFFER_SIZE-1; i++)
+    {
+      if (buffer[i] > max)
+        max = buffer[i];
+    }
+    Serial.println(max);
+  }
+
+  // if (mic5.buffer_ready())
+  // {
+  //   adc_sample_t *buffer = mic5.get_full_buffer();
+  //   size_t count = 0;
+  //   adc_sample_t max = 0;
+  //   // TODO: Implement peak detection
+  //   for (size_t i = 1; i < ADC_BUFFER_SIZE-1; i++)
+  //   {
+  //     if (buffer[i] > max)
+  //       max = buffer[i];
+  //   }
+  //   Serial.println(max);
+  // }
 }
 
 // #include <driver/i2s.h>

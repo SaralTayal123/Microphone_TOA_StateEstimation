@@ -1,6 +1,6 @@
 #include "ADC_Sampler.h"
 
-ADC_Sampler::ADC_Sampler(adc1_channel_t adc_channel)
+ADC_Sampler::ADC_Sampler(adc2_channel_t adc_channel)
 {
     adc_channel_ = adc_channel;
     index_ = 0;
@@ -20,15 +20,15 @@ inline adc_sample_t * ADC_Sampler::get_active_buffer(void)
 
 void ADC_Sampler::init(void)
 {
-    adc1_config_width(ADC_WIDTH_BIT_12);
-    adc1_config_channel_atten(adc_channel_, ADC_ATTEN_DB_11);
+    adc2_config_channel_atten(adc_channel_, ADC_ATTEN_DB_11);
 }
 
 void ADC_Sampler::sample(void)
 {
-    adc_sample_t sample = adc1_get_raw(adc_channel_);
+    int sample;
+    esp_err_t err = adc2_get_raw(adc_channel_, ADC_WIDTH_BIT_12, &sample);
     adc_sample_t * buffer = get_active_buffer();
-    buffer[index_++] = sample;
+    buffer[index_++] = (adc_sample_t) sample;
     if (index_ >= ADC_BUFFER_SIZE) {
         index_ = 0;
         buffer0_active_ = !buffer0_active_;
