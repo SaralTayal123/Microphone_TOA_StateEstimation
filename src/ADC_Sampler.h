@@ -3,13 +3,14 @@
 
 #include <driver/adc.h>
 
-#define ADC_BUFFER_SIZE     4096
+#define ADC_BUFFER_SIZE         4096UL
+#define AVERAGE_SAMPLE_TIME_US  45UL    // Each ADC sample takes 45us
 typedef uint16_t adc_sample_t;
 
 class ADC_Sampler
 {
 private:
-    adc2_channel_t adc_channel_;
+    adc1_channel_t adc_channel_;
     adc_sample_t buffer0_[ADC_BUFFER_SIZE];
     adc_sample_t buffer1_[ADC_BUFFER_SIZE];
     size_t index_;
@@ -18,7 +19,8 @@ private:
     inline adc_sample_t * get_active_buffer(void);
 
 public:
-    ADC_Sampler(adc2_channel_t adc_channel);
+    size_t number_;
+    ADC_Sampler(size_t number, adc1_channel_t adc_channel);
     ~ADC_Sampler();
     void init(void);
     void sample(void);

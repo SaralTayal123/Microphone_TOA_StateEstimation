@@ -1,7 +1,31 @@
 #include "ADC_Sampler.h"
+#include <soc/sens_reg.h>
+#include <soc/sens_struct.h>
 
-ADC_Sampler::ADC_Sampler(adc2_channel_t adc_channel)
+void local_adc1_RTC_control(void)
 {
+    SENS.sar_read_ctrl.sar1_dig_force = false;      //RTC controller controls the ADC, not digital controller
+    SENS.sar_meas_start1.meas1_start_force = true;  //RTC controller controls the ADC,not ulp coprocessor
+    SENS.sar_meas_start1.sar1_en_pad_force = true;  //RTC controller controls the data port, not ulp coprocessor
+    SENS.sar_touch_ctrl1.xpd_hall_force = true;     // RTC controller controls the hall sensor power,not ulp coprocessor
+    SENS.sar_touch_ctrl1.hall_phase_force = true;   // RTC controller controls the hall sensor phase,not ulp coprocessor
+}
+
+int local_adc1_read(int channel)
+{
+    uint16_t adc_value;
+    SENS.sar_meas_start1.sar1_en_pad = (1 << channel); // only one channel is selected
+    while (SENS.sar_slave_addr1.meas_status != 0);
+    SENS.sar_meas_start1.meas1_start_sar = 0;
+    SENS.sar_meas_start1.meas1_start_sar = 1;
+    while (SENS.sar_meas_start1.meas1_done_sar == 0);
+    adc_value = SENS.sar_meas_start1.meas1_data_sar;
+    return adc_value;
+}
+
+ADC_Sampler::ADC_Sampler(size_t number, adc1_channel_t adc_channel)
+{
+    number_ = number;
     adc_channel_ = adc_channel;
     index_ = 0;
     buffer0_active_ = true;
@@ -20,15 +44,15 @@ inline adc_sample_t * ADC_Sampler::get_active_buffer(void)
 
 void ADC_Sampler::init(void)
 {
-    adc2_config_channel_atten(adc_channel_, ADC_ATTEN_DB_11);
+    adc1_config_width(ADC_WIDTH_BIT_12);
+    adc1_config_channel_atten(adc_channel_, ADC_ATTEN_DB_11);
 }
 
 void ADC_Sampler::sample(void)
 {
-    int sample;
-    esp_err_t err = adc2_get_raw(adc_channel_, ADC_WIDTH_BIT_12, &sample);
     adc_sample_t * buffer = get_active_buffer();
-    buffer[index_++] = (adc_sample_t) sample;
+    local_adc1_RTC_control();
+    buffer[index_++] = local_adc1_read(adc_channel_);
     if (index_ >= ADC_BUFFER_SIZE) {
         index_ = 0;
         buffer0_active_ = !buffer0_active_;
