@@ -4,6 +4,9 @@
 
 #define NUM_MICS    5UL
 
+TaskHandle_t sampleTaskHandle;
+TaskHandle_t processTaskHandle;
+
 ADC_Sampler mic0(0, ADC1_CHANNEL_0);
 ADC_Sampler mic1(1, ADC1_CHANNEL_3);
 ADC_Sampler mic2(2, ADC1_CHANNEL_4);
@@ -37,46 +40,49 @@ void getTimeOfPeak(ADC_Sampler mic)
 {
   adc_sample_t max;
   size_t maxIndex;
-  while(!mic.buffer_ready());
-  adc_sample_t *buffer = mic.get_full_buffer();
-  max = buffer[0];
-  maxIndex = 0;
-  for (size_t i = 1; i < ADC_BUFFER_SIZE; i++)
+  if (mic.buffer_ready())
   {
-    if (buffer[i] > max) {
-      max = buffer[i];
-      maxIndex = i;
+    adc_sample_t *buffer = mic.get_full_buffer();
+    max = buffer[0];
+    maxIndex = 0;
+    for (size_t i = 1; i < ADC_BUFFER_SIZE; i++)
+    {
+      if (buffer[i] > max) {
+        max = buffer[i];
+        maxIndex = i;
+      }
     }
+    size_t time_us = (maxIndex * NUM_MICS - mic.number_) * AVERAGE_SAMPLE_TIME_US;
+    Serial.printf("%d: %d, %d\n", mic.number_, max, time_us);
   }
-  size_t time_us = (maxIndex * NUM_MICS - mic.number_) * AVERAGE_SAMPLE_TIME_US;
-  Serial.printf("%d, %d\n", max, time_us);
 }
 
 void processTask(void *param)
 {
-  getTimeOfPeak(mic0);
-  getTimeOfPeak(mic1);
-  getTimeOfPeak(mic2);
-  getTimeOfPeak(mic3);
-  getTimeOfPeak(mic4);
+  while(true) {
+    getTimeOfPeak(mic0);
+    getTimeOfPeak(mic1);
+    getTimeOfPeak(mic2);
+    getTimeOfPeak(mic3);
+    getTimeOfPeak(mic4);
+    vTaskDelay(1);
+  }
 }
 
 void setup()
 {
-  // Initialize the ADC
+  // Start the serial communication
+  Serial.begin(115200);
+
+  // Initialize the ADCs
   mic0.init();
   mic1.init();
   mic2.init();
   mic3.init();
   mic4.init();
 
-  // Start the serial communication
-  Serial.begin(115200);
-
-  TaskHandle_t sampleTaskHandle;
-  TaskHandle_t processTaskHandle;
-  xTaskCreatePinnedToCore(sampleTask, "Sample", 8192, NULL, 1, &sampleTaskHandle, 1);
-  xTaskCreatePinnedToCore(processTask, "Process", 8192, NULL, 1, &processTaskHandle, 0);
+  xTaskCreatePinnedToCore(sampleTask, "Sample", 2048, NULL, 1, &sampleTaskHandle, 1);
+  xTaskCreatePinnedToCore(processTask, "Process", 16384, NULL, 1, &processTaskHandle, 0);
 }
 
 void loop()

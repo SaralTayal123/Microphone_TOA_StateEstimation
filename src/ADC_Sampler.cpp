@@ -1,4 +1,5 @@
 #include "ADC_Sampler.h"
+#include <Arduino.h>
 #include <soc/sens_reg.h>
 #include <soc/sens_struct.h>
 
@@ -35,6 +36,14 @@ ADC_Sampler::ADC_Sampler(size_t number, adc1_channel_t adc_channel)
 
 ADC_Sampler::~ADC_Sampler()
 {
+    // if (buffer0_ != NULL)
+    // {
+    //     free(buffer0_);
+    // }
+    // if (buffer1_ != NULL)
+    // {
+    //     free(buffer1_);
+    // }
 }
 
 inline adc_sample_t * ADC_Sampler::get_active_buffer(void)
@@ -44,8 +53,17 @@ inline adc_sample_t * ADC_Sampler::get_active_buffer(void)
 
 void ADC_Sampler::init(void)
 {
+    Serial.printf("Mic %d: Init starting\n", number_);
+    // buffer0_ = (adc_sample_t *) malloc(sizeof(adc_sample_t)*ADC_BUFFER_SIZE);
+    // buffer1_ = (adc_sample_t *) malloc(sizeof(adc_sample_t)*ADC_BUFFER_SIZE);
+    if (buffer0_ == NULL || buffer1_ == NULL)
+    {
+        Serial.printf("Mic %d: Buffer allocation failed\n", number_);
+        while(true);
+    }
     adc1_config_width(ADC_WIDTH_BIT_12);
     adc1_config_channel_atten(adc_channel_, ADC_ATTEN_DB_11);
+    Serial.printf("Mic %d: Init finished\n", number_);
 }
 
 void ADC_Sampler::sample(void)

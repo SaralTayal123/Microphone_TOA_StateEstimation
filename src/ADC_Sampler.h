@@ -13,9 +13,9 @@ private:
     adc1_channel_t adc_channel_;
     adc_sample_t buffer0_[ADC_BUFFER_SIZE];
     adc_sample_t buffer1_[ADC_BUFFER_SIZE];
-    size_t index_;
-    bool buffer0_active_;
-    bool buffer_full_;
+    volatile size_t index_;
+    volatile bool buffer0_active_;
+    volatile bool buffer_full_;
     inline adc_sample_t * get_active_buffer(void);
 
 public:
