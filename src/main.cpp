@@ -22,6 +22,7 @@ void sampleTask(void *param)
     // for (ulong i = 0; i < times; i++)
     // {
     //   auto start = std::chrono::system_clock::now();
+      Serial.println("Sampling");
       mic0.sample();
       mic1.sample();
       mic2.sample();
@@ -38,33 +39,37 @@ void sampleTask(void *param)
 
 void getTimeOfPeak(ADC_Sampler mic)
 {
-  adc_sample_t max;
-  size_t maxIndex;
-  if (mic.buffer_ready())
-  {
-    adc_sample_t *buffer = mic.get_full_buffer();
-    max = buffer[0];
-    maxIndex = 0;
-    for (size_t i = 1; i < ADC_BUFFER_SIZE; i++)
-    {
-      if (buffer[i] > max) {
-        max = buffer[i];
-        maxIndex = i;
-      }
-    }
-    size_t time_us = (maxIndex * NUM_MICS - mic.number_) * AVERAGE_SAMPLE_TIME_US;
-    Serial.printf("%d: %d, %d\n", mic.number_, max, time_us);
-  }
+  Serial.printf("Hello from mic %d\n", mic.mic_number);
+  // adc_sample_t max;
+  // size_t maxIndex;
+  // if (mic.buffer_ready())
+  // {
+  //   Serial.printf("Mic %d: Buffer ready\n", mic.mic_number);
+  //   adc_sample_t *buffer = mic.get_full_buffer();
+  //   Serial.printf("Mic %d: Buffer at %p\n", mic.mic_number, buffer);
+  //   max = buffer[0];
+  //   maxIndex = 0;
+  //   for (size_t i = 1; i < ADC_BUFFER_SIZE; i++)
+  //   {
+  //     if (buffer[i] > max) {
+  //       max = buffer[i];
+  //       maxIndex = i;
+  //     }
+  //   }
+  //   size_t time_us = (maxIndex * NUM_MICS - mic.mic_number) * AVERAGE_SAMPLE_TIME_US;
+  //   Serial.printf("%d: %d, %d\n", mic.mic_number, max, time_us);
+  // }
 }
 
 void processTask(void *param)
 {
+  Serial.println("Peaks task Starting");
   while(true) {
     getTimeOfPeak(mic0);
-    getTimeOfPeak(mic1);
-    getTimeOfPeak(mic2);
-    getTimeOfPeak(mic3);
-    getTimeOfPeak(mic4);
+    // getTimeOfPeak(mic1);
+    // getTimeOfPeak(mic2);
+    // getTimeOfPeak(mic3);
+    // getTimeOfPeak(mic4);
     vTaskDelay(1);
   }
 }
@@ -80,9 +85,10 @@ void setup()
   mic2.init();
   mic3.init();
   mic4.init();
+  Serial.println("Init finished. Starting scheduler");
 
-  xTaskCreatePinnedToCore(sampleTask, "Sample", 2048, NULL, 1, &sampleTaskHandle, 1);
-  xTaskCreatePinnedToCore(processTask, "Process", 16384, NULL, 1, &processTaskHandle, 0);
+  xTaskCreatePinnedToCore(sampleTask, "Sample", 2048, NULL, 1, &sampleTaskHandle, 0);
+  xTaskCreatePinnedToCore(processTask, "Peaks", 16484, NULL, 1, &processTaskHandle, 1);
 }
 
 void loop()

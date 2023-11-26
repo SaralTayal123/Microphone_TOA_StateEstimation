@@ -19,7 +19,7 @@ private:
     inline adc_sample_t * get_active_buffer(void);
 
 public:
-    size_t number_;
+    size_t mic_number;
     ADC_Sampler(size_t number, adc1_channel_t adc_channel);
     ~ADC_Sampler();
     void init(void);
