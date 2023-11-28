@@ -3,6 +3,7 @@
 
 #include <driver/adc.h>
 
+// TODO: Sometimes peaks occur across two buffers
 #define ADC_BUFFER_SIZE 512UL // Decreased so that us fits within uint16_t
 #define NUM_MICS        5UL
 typedef struct {
