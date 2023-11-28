@@ -1,5 +1,5 @@
 #include <Arduino.h>
-#include <chrono>
+#include <esp_task_wdt.h>
 #include "ADC_Sampler.h"
 
 SET_LOOP_TASK_STACK_SIZE(16384);
@@ -16,6 +16,8 @@ static ADC_Sampler mic4(4, ADC1_CHANNEL_6, buffers, buffer_full);
 
 void sampleTask(void *param)
 {
+  // Disable watchdog
+  disableCore0WDT();
   while (true)
   {
     ulong times = 10000UL;
@@ -27,8 +29,6 @@ void sampleTask(void *param)
       mic3.sample();
       mic4.sample();
     }
-    // TODO: disable watchdog
-    vTaskDelay(1);
   }
 }
 
