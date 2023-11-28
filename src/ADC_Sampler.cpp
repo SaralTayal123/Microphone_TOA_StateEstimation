@@ -12,9 +12,9 @@ void local_adc1_RTC_control(void)
     SENS.sar_touch_ctrl1.hall_phase_force = true;   // RTC controller controls the hall sensor phase,not ulp coprocessor
 }
 
-adc_sample_t local_adc1_read(int channel)
+uint16_t local_adc1_read(int channel)
 {
-    adc_sample_t adc_value;
+    uint16_t adc_value;
     SENS.sar_meas_start1.sar1_en_pad = (1 << channel); // only one channel is selected
     while (SENS.sar_slave_addr1.meas_status != 0);
     SENS.sar_meas_start1.meas1_start_sar = 0;
@@ -24,7 +24,9 @@ adc_sample_t local_adc1_read(int channel)
     return adc_value;
 }
 
-ADC_Sampler::ADC_Sampler(size_t number, adc1_channel_t adc_channel, adc_sample_t buffers[2*NUM_MICS][ADC_BUFFER_SIZE], volatile bool buffer_full[NUM_MICS])
+ADC_Sampler::ADC_Sampler(size_t number, adc1_channel_t adc_channel,
+        adc_sample_t buffers[2*NUM_MICS][ADC_BUFFER_SIZE],
+        volatile bool buffer_full[NUM_MICS])
 {
     mic_number = number;
     adc_channel_ = adc_channel;
@@ -51,14 +53,24 @@ void ADC_Sampler::init(void)
     adc1_config_channel_atten(adc_channel_, ADC_ATTEN_DB_11);
 }
 
-void ADC_Sampler::sample(void)
+void ADC_Sampler::sample(uint32_t * mic0_start_time)
 {
     volatile adc_sample_t * buffer = get_active_buffer();
     local_adc1_RTC_control();
-    buffer[index_] = local_adc1_read(adc_channel_);
+    if (mic_number == 0 && index_ == 0)
+    {
+        *mic0_start_time = micros();
+    }
+    buffer[index_].adc_sample = local_adc1_read(adc_channel_);
+    uint32_t elapsed_time_us = micros() - *mic0_start_time;
+    buffer[index_].sample_time_us = (uint16_t) elapsed_time_us;
+    if (elapsed_time_us != buffer[index_].sample_time_us)
+    {
+        // Sample_time_us overflowed
+        Serial.printf("%d,%d: %u %u\n", mic_number, index_, elapsed_time_us, buffer[index_].sample_time_us);
+    }
     index_++;
     if (index_ >= ADC_BUFFER_SIZE) {
-        // Serial.printf("Mic %d: Buffer is filled\n", mic_number);
         index_ = 0;
         buffer0_active_ = !buffer0_active_;
         *buffer_full_ = true;

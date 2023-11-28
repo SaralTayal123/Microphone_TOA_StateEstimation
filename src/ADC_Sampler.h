@@ -3,10 +3,12 @@
 
 #include <driver/adc.h>
 
-#define ADC_BUFFER_SIZE         4096UL
-#define AVERAGE_SAMPLE_TIME_US  45UL    // Each ADC sample takes 45us
-#define NUM_MICS    5UL
-typedef uint16_t adc_sample_t;
+#define ADC_BUFFER_SIZE 512UL // Decreased so that us fits within uint16_t
+#define NUM_MICS        5UL
+typedef struct {
+    uint16_t adc_sample;
+    uint16_t sample_time_us;
+} adc_sample_t;
 
 class ADC_Sampler
 {
@@ -21,10 +23,14 @@ private:
 public:
     volatile bool *buffer_full_;
     size_t mic_number;
-    ADC_Sampler(size_t number, adc1_channel_t adc_channel, adc_sample_t buffers[2*NUM_MICS][ADC_BUFFER_SIZE], volatile bool buffer_full[NUM_MICS]);
+    ADC_Sampler(
+        size_t number, adc1_channel_t adc_channel,
+        adc_sample_t buffers[2*NUM_MICS][ADC_BUFFER_SIZE],
+        volatile bool buffer_full[NUM_MICS]
+    );
     ~ADC_Sampler();
     void init(void);
-    void sample(void);
+    void sample(uint32_t * mic0_start_time);
     volatile adc_sample_t * get_full_buffer(void);
     volatile bool buffer_ready(void);
 };
