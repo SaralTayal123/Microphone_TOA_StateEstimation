@@ -41,7 +41,7 @@ size_t getTimeOfPeak(ADC_Sampler mic)
     maxIndex = -1;
     for (size_t i = 0; i < ADC_BUFFER_SIZE; i++)
     {
-      if (buffer[i].adc_sample > max && buffer[i].adc_sample > 4000) {
+      if (buffer[i].adc_sample > max && (buffer[i].adc_sample > 4000 || buffer[i].adc_sample < 100)) {
         max = buffer[i].adc_sample;
         maxIndex = i;
       }
