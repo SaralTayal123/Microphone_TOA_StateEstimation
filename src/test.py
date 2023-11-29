@@ -41,12 +41,13 @@ def solve_3_points(measurement0, measurement1, measurement2):
     F = functions(x0, y0, x1, y1, x2, y2, (t1 - t0) * speed, (t2 - t0) * speed, (t2 - t1) * speed)
     res = least_squares(F, [xp, yp])
     x, y = res.x
-    return x, y
+    # print("Cost: ", res.cost)
+    return x, y, res.cost
 
 def check_sol_validity(measurement0, measurement1, measurement2):
-    solx, soly = solve_3_points(measurement0, measurement1, measurement2)
+    solx, soly, cost = solve_3_points(measurement0, measurement1, measurement2)
     valid = False
-    if (solx ** 2 + soly ** 2 < radius_mm ** 2):
+    if (solx ** 2 + soly ** 2 < radius_mm ** 2 and cost < 1e-3):
         valid = True
     return [solx, soly, measurement0, measurement1, measurement2, valid]
 
@@ -55,9 +56,9 @@ def solve_best_fit(measurements):
     sols = []
 
     for indexes in index_lut:
+        # print("mics used: ", indexes)
         results = check_sol_validity(measurements[indexes[0]], measurements[indexes[1]], measurements[indexes[2]])
-        print("mics used: ", indexes)
-        print("position: ", results[0], results[1], results[-1])
+        # print("position: ", results[0], results[1], results[-1])
         if results[-1]:
             sols.append(results)
     if len(sols) > 0:
