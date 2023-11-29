@@ -1,4 +1,6 @@
 import numpy as np
+import datetime
+from scipy.optimize import least_squares
 
 speed = 0.343 # mm / us
 radius_mm = 220/2
@@ -37,7 +39,8 @@ def solve_3_points(measurement0, measurement1, measurement2):
     xp = np.mean([x0, x1, x2])
     yp = np.mean([y0, y1, y2])
     F = functions(x0, y0, x1, y1, x2, y2, (t1 - t0) * speed, (t2 - t0) * speed, (t2 - t1) * speed)
-    x, y = grad_desc(F, xp, yp, 100000, 0.0001)
+    res = least_squares(F, [xp, yp])
+    x, y = res.x
     return x, y
 
 def check_sol_validity(measurement0, measurement1, measurement2):
@@ -59,7 +62,6 @@ def solve_best_fit(measurements):
             sols.append(results)
     if len(sols) > 0:
         print(f"Average: ({np.mean([x[0] for x in sols])}, {np.mean([x[1] for x in sols])})")
-    print("")
 
 
 # measurements = [[110.0, 0.0, 42242],
@@ -85,4 +87,9 @@ for time in times:
     time_data = [float(x) for x in time.split(", ")]
     coupled_measurements = [[radius_mm*np.cos(-i*np.pi/3), radius_mm*np.sin(-i*np.pi/3), time_data[i]] for i in range(len(time_data))]
     print(coupled_measurements)
+    start = datetime.datetime.now()
     solve_best_fit(coupled_measurements)
+    end = datetime.datetime.now()
+    diff = end - start
+    print("Completion time: ", diff)
+    print("")
